@@ -40,10 +40,11 @@ the CCCD details.
 
 ## Device matching and registry order
 
-`IcomonBodyScaleHandler.supportFor` will require both:
-
-- advertised name exactly equal to `Body scale`, ignoring case;
-- advertised service `0000FFB0-0000-1000-8000-00805F9B34FB`.
+`IcomonBodyScaleHandler.supportFor` will require the advertised name to be
+exactly `Body scale`, ignoring case. The scale may omit `0xFFB0` from its
+advertisement, so requiring that service during scanning would prevent a
+valid device from being selected. The handler uses the verified `0xFFB0`
+service and characteristics after connecting.
 
 It will report `ICOMON BF-L303B` and `CONNECT_GATT`. The handler will be
 registered immediately before `MGBHandler`, whose service-only match otherwise
@@ -113,7 +114,7 @@ Tests will cover:
 2. A2 weight decoding and A3 weight/heart-rate/impedance decoding;
 3. B0 acknowledgement and B1 profile frame construction;
 4. WLA07 reference outputs for both sexes and boundary inputs;
-5. strict `Body scale` + `0xFFB0` matching;
+5. strict `Body scale` matching with and without an advertised `0xFFB0` service;
 6. registry ordering ahead of `MGBHandler` and catalog ownership.
 
 Fixtures will be synthetic and contain no personal measurements, MAC addresses,

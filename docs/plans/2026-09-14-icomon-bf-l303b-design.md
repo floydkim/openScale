@@ -11,11 +11,9 @@ Pro-compatible protocol:
 
 - connect to the `0xFFB0` GATT service;
 - subscribe to both the `0xFFB2` notification and `0xFFB3` indication;
-- send the user's height, age-derived profile timestamp, and gender;
+- send the user's height, current profile timestamp, and gender;
 - decode live weight frames;
-- decode the final weight, heart rate, and impedance frame;
-- calculate the WLA07 body-composition values already used by openScale's
-  Active Era driver.
+- decode the final weight, heart rate, and impedance frame.
 
 History download, scale clock synchronization, unit configuration, and battery
 reporting are explicitly out of scope. The device was observed not to support
@@ -23,14 +21,13 @@ those operations.
 
 ## Architecture
 
-Add one device-specific handler and one small shared WLA07 calculator extracted
-from `ActiveEraBF06Handler`:
+Add one device-specific handler:
 
 ```text
 FFB2 notify  ─┐
               ├─ IcomonBodyScaleHandler ── ScaleMeasurement ── openScale
 FFB3 indicate ┘             │
-                            └─ IcomonWla07BodyComposition
+                            └─ profile write / ACKs on FFB1
 ```
 
 The handler will use the existing `ScaleDeviceHandler` transport helpers and
@@ -51,10 +48,15 @@ registered immediately before `MGBHandler`, whose service-only match otherwise
 claims every unrecognised `0xFFB0` device. The existing generic ICOMON/swan/YG
 claims will remain unchanged.
 
-Declared and implemented capabilities:
+Declared capabilities:
 
 - `LIVE_WEIGHT_STREAM`
 - `BODY_COMPOSITION`
+- `USER_SYNC`
+
+Implemented capabilities:
+
+- `LIVE_WEIGHT_STREAM`
 - `USER_SYNC`
 
 No capability will be declared for history, time sync, unit configuration, or
@@ -87,24 +89,11 @@ creating a duplicate record when `A3` follows.
 
 ## Measurement mapping
 
-The final frame always contributes:
-
-- weight in kilograms;
-- heart rate when non-zero;
-- raw impedance in ohms.
-
-When the user profile has a valid height and the impedance is positive, the
-shared WLA07 calculator contributes the values represented by openScale's
-existing measurement keys: body-fat percentage, muscle percentage, visceral-fat
-index, bone mass, water percentage, lean body mass, basal metabolic rate, and
-protein percentage. The raw impedance is retained so openScale can recalculate
-derived values later where supported.
-
-The calculator is extracted from the existing openScale WLA07 implementation,
-not copied from the vendor application. Its existing coefficient table,
-clamping, and rounding behavior remain unchanged. The PR will identify the
-algorithm as reverse-engineered/observed and will not present the BIA estimates
-as medical measurements.
+The final frame contributes only the values it actually sends: weight, optional
+heart rate, and raw impedance. The observed protocol does not contain body-fat,
+muscle, water, bone, BMR, visceral-fat, or protein fields, so the handler leaves
+those values unset. This follows openScale's rule that a driver must not write
+guessed or independently derived values into measurement history.
 
 ## Validation
 
@@ -113,9 +102,8 @@ Tests will cover:
 1. valid and invalid frame checksums and lengths;
 2. A2 weight decoding and A3 weight/heart-rate/impedance decoding;
 3. B0 acknowledgement and B1 profile frame construction;
-4. WLA07 reference outputs for both sexes and boundary inputs;
-5. strict `Body scale` matching with and without an advertised `0xFFB0` service;
-6. registry ordering ahead of `MGBHandler` and catalog ownership.
+4. strict `Body scale` matching with and without an advertised `0xFFB0` service;
+5. registry ordering ahead of `MGBHandler` and catalog ownership.
 
 Fixtures will be synthetic and contain no personal measurements, MAC addresses,
 PacketLogger files, or official-app binaries. After unit tests pass, the fork
@@ -125,6 +113,7 @@ real Android device. The PR will target the upstream `master` branch.
 ## Non-goals
 
 - decoding unsupported history, time, unit, or battery operations;
+- calculating body-composition values that are not present in the observed frames;
 - changing the existing `MGBHandler` protocol;
 - adding a server, login, or cloud synchronization;
 - including proprietary app assets or raw personal captures.

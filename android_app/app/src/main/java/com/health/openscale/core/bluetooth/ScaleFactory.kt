@@ -53,6 +53,7 @@ import com.health.openscale.core.bluetooth.scales.HuaweiHagridWspHandler
 import com.health.openscale.core.bluetooth.scales.HumeDara2Handler
 import com.health.openscale.core.bluetooth.scales.IHealthHS3Handler
 import com.health.openscale.core.bluetooth.scales.InlifeHandler
+import com.health.openscale.core.bluetooth.scales.IcomonBodyScaleHandler
 import com.health.openscale.core.bluetooth.scales.KeepS3Handler
 import com.health.openscale.core.bluetooth.scales.LinkMode
 import com.health.openscale.core.bluetooth.scales.MGBHandler
@@ -177,6 +178,7 @@ class ScaleFactory @Inject constructor(
             EEBBLHandler(),
             FitTrackDaraHandler(),
             DrTrustSSW532Handler(),
+            IcomonBodyScaleHandler(),
             MGBHandler(),
             MedisanaBs44xHandler(),
             InlifeHandler(),

@@ -27,6 +27,7 @@ import com.health.openscale.core.bluetooth.scales.EufyC20Handler
 import com.health.openscale.core.bluetooth.scales.ExcelvanCF36xHandler
 import com.health.openscale.core.bluetooth.scales.FitTrackDaraHandler
 import com.health.openscale.core.bluetooth.scales.HumeDara2Handler
+import com.health.openscale.core.bluetooth.scales.IcomonBodyScaleHandler
 import com.health.openscale.core.bluetooth.scales.MGBHandler
 import com.health.openscale.core.bluetooth.scales.OkOkHandler
 import com.health.openscale.core.bluetooth.scales.PicoocBroadcastHandler
@@ -174,6 +175,7 @@ class ScaleFactoryTest {
         assertClaimedBy(device("relaxmedic", SERVICE_FFB0), RelaxmedicHandler::class.java)
         assertClaimedBy(device("robi", SERVICE_FFB0), RobiS9Handler::class.java)
         assertClaimedBy(device("SSW532", SERVICE_FFB0), DrTrustSSW532Handler::class.java)
+        assertClaimedBy(device("Body scale", SERVICE_FFB0), IcomonBodyScaleHandler::class.java)
 
         // The generic member of the family keeps the devices nobody else claims.
         assertClaimedBy(device("swan", SERVICE_FFB0), MGBHandler::class.java)
@@ -186,6 +188,7 @@ class ScaleFactoryTest {
             "RelaxmedicHandler",
             "RobiS9Handler",
             "DrTrustSSW532Handler",
+            "IcomonBodyScaleHandler",
         )
         for (sibling in siblings) {
             assertThat(order.indexOf(sibling)).isLessThan(mgb)

@@ -149,10 +149,26 @@ class IcomonBodyScaleHandlerTest {
         assertThat(measurement[MeasurementType.WEIGHT]!!.value).isWithin(0.0001f).of(75.5f)
         assertThat(measurement[MeasurementType.HEART_RATE]!!.value).isEqualTo(72)
         assertThat(measurement[MeasurementType.IMPEDANCE]!!.value).isEqualTo(450f)
-        assertThat(measurement.values.keys).containsExactly(
+        assertThat(measurement[MeasurementType.BODY_FAT]!!.value).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.WATER]!!.value).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.MUSCLE]!!.value).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.BONE]!!.value).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.VISCERAL_FAT]!!).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.PROTEIN]!!.value).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.BMR]!!.value).isGreaterThan(0f)
+        assertThat(measurement[MeasurementType.LBM]!!.value).isGreaterThan(0f)
+        assertThat(measurement.values.keys).containsAtLeast(
             MeasurementType.WEIGHT,
             MeasurementType.HEART_RATE,
             MeasurementType.IMPEDANCE,
+            MeasurementType.BODY_FAT,
+            MeasurementType.WATER,
+            MeasurementType.MUSCLE,
+            MeasurementType.BONE,
+            MeasurementType.VISCERAL_FAT,
+            MeasurementType.PROTEIN,
+            MeasurementType.BMR,
+            MeasurementType.LBM,
         )
         assertThat(transport.writes).hasSize(1)
         assertThat(IcomonBodyScaleHandler.parseFrame(transport.writes.single().payload)!!.payload.unsignedValues())

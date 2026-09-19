@@ -20,11 +20,14 @@ package com.health.openscale.core.bluetooth.scales
 import com.health.openscale.R
 import com.health.openscale.core.bluetooth.data.ScaleMeasurement
 import com.health.openscale.core.bluetooth.data.ScaleUser
+import com.health.openscale.core.bluetooth.libs.IcomonBodyComposition
 import com.health.openscale.core.data.Bpm
 import com.health.openscale.core.data.GenderType
+import com.health.openscale.core.data.Kcal
 import com.health.openscale.core.data.Kg
 import com.health.openscale.core.data.MeasurementType
 import com.health.openscale.core.data.Ohm
+import com.health.openscale.core.data.Percent
 import com.health.openscale.core.service.ScannedDeviceInfo
 import java.time.Instant
 import java.util.Date
@@ -105,7 +108,7 @@ class IcomonBodyScaleHandler : ScaleDeviceHandler() {
 
         when (type) {
             TYPE_LIVE_WEIGHT -> decodeWeight(frame)?.let(::handleLiveWeight)
-            TYPE_FINAL_RESULT -> decodeResult(frame)?.let(::publishResult)
+            TYPE_FINAL_RESULT -> decodeResult(frame)?.let { publishResult(it, user) }
         }
     }
 
@@ -131,7 +134,7 @@ class IcomonBodyScaleHandler : ScaleDeviceHandler() {
         }
     }
 
-    private fun publishResult(result: ResultFrame) {
+    private fun publishResult(result: ResultFrame, user: ScaleUser) {
         if (finalPublished) return
 
         val measurement = ScaleMeasurement().apply {
@@ -139,6 +142,24 @@ class IcomonBodyScaleHandler : ScaleDeviceHandler() {
             this[MeasurementType.WEIGHT] = Kg(result.weightKg.toFloat())
             if (result.heartRateBpm > 0) this[MeasurementType.HEART_RATE] = Bpm(result.heartRateBpm)
             if (result.impedanceOhm > 0) this[MeasurementType.IMPEDANCE] = Ohm(result.impedanceOhm.toFloat())
+
+            if (result.impedanceOhm in 1..1500 && user.bodyHeight > 0f) {
+                val composition = IcomonBodyComposition.calculate(
+                    gender = user.gender,
+                    ageYears = user.age,
+                    heightCm = user.bodyHeight.toDouble(),
+                    weightKg = result.weightKg,
+                    impedanceOhm = result.impedanceOhm.toDouble(),
+                )
+                this[MeasurementType.BODY_FAT] = Percent(composition.bodyFatPercent.toFloat())
+                this[MeasurementType.WATER] = Percent(composition.waterPercent.toFloat())
+                this[MeasurementType.MUSCLE] = Percent(composition.musclePercent.toFloat())
+                this[MeasurementType.BONE] = Kg(composition.boneMassKg.toFloat())
+                this[MeasurementType.LBM] = Kg(composition.fatFreeMassKg.toFloat())
+                this[MeasurementType.VISCERAL_FAT] = composition.visceralFatIndex.toFloat()
+                this[MeasurementType.PROTEIN] = Percent(composition.proteinPercent.toFloat())
+                this[MeasurementType.BMR] = Kcal(composition.basalMetabolicRate.toFloat())
+            }
         }
 
         publish(measurement)
